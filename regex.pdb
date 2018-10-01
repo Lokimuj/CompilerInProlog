@@ -1,0 +1,30 @@
+%Adrian Postolache
+%axp3806@rit.edu
+
+%empty string
+re_contains(empty,Str,Str,Cons,Cons).
+
+%reads any character
+re_contains(any,[H|T],R,Cons,Newcons):- H \== '=|',re_contains(H,[H|T],R,Cons,Newcons).
+
+%concat
+re_contains(seq(P,Q),Str,R,Cons,Newcons):-re_contains(P,Str,L,Cons,Tempcons),
+					  re_contains(Q,L,R,Tempcons,Newcons).
+
+%union
+re_contains(union(P,Q),Str,R,Cons,Newcons):-re_contains(P,Str,R,Cons,Newcons);
+					    re_contains(Q,Str,R,Cons,Newcons).
+
+%star+
+re_contains(kleene1(P),Str,R,Cons,Newcons):-re_contains(seq(P,kleene(P)),Str,R,Cons,Newcons).
+
+%star
+re_contains(kleene(P),Str,R,Cons,Newcons):-re_contains(P,Str,L,Cons,Tempcons),
+					   re_contains(kleene(P),L,R,Tempcons,Newcons);
+ 					   re_contains(empty,Str,R,Cons,Newcons).
+
+%atom
+re_contains(E,[E|R],R,[E|L],L).
+
+%user function
+re_contains(Expr,Str):- re_contains(Expr,Str,[]),!.

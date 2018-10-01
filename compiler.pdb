@@ -1,0 +1,41 @@
+%Author Adrian Postolache
+%Takes a syntax tree and makes a list of compiled instructions
+
+%Compiling rules
+compile([prog,Rest],Instr,Num):-compile(Rest,Instr,Num).
+compile([stmt,Stmt],Instr,Num):-compile(Stmt,Instr,Num).
+compile([stmtseq,Stmt],Instr,Num):-compile(Stmt,Instr,Num).
+compile([stmtseq,Stmt,StmtSeq],Instr,Num):-compile(Stmt,Instr1,Num1),compile(StmtSeq,Instr2,Num2),Num is Num1+Num2,append(Instr1,Instr2,Instr).
+compile([pass],[],0).
+compile([expr,Expr],Instr,Num):-compile(Expr,Instr,Num).
+compile([optoken,[optoken,['+']],Expr1,Expr2],Instr,Num):-compile(Expr1,Instr1,Num1),compile(Expr2,Instr2,Num2),
+							append(Instr1,Instr2,Temp),append(Temp,[["ADD"]],Instr),
+							Num is Num1+Num2+1.
+
+compile([optoken,[optoken,['-']],Expr1,Expr2],Instr,Num):-compile(Expr1,Instr1,Num1),compile(Expr2,Instr2,Num2),
+							append(Instr1,Instr2,Temp),append(Temp,[["SUB"]],Instr),
+							Num is Num1+Num2+1.
+compile([optoken,[optoken,['*']],Expr1,Expr2],Instr,Num):-compile(Expr1,Instr1,Num1),compile(Expr2,Instr2,Num2),
+							append(Instr1,Instr2,Temp),append(Temp,[["MULT"]],Instr),
+							Num is Num1+Num2+1.
+compile([optoken,[optoken,['/']],Expr1,Expr2],Instr,Num):-compile(Expr1,Instr1,Num1),compile(Expr2,Instr2,Num2),
+							append(Instr1,Instr2,Temp),append(Temp,[["DIV"]],Instr),
+							Num is Num1+Num2+1.
+compile([littoken,Val],[["PUSH",Val1]],1):-string_codes(Val1,Val).
+compile([idtoken,Val],[["LOAD",Val1]],1):-string_codes(Val1,Val).
+compile([iftoken,Cond,True,False],Instr,Num):-compile(Cond,Instr1,Num1),compile(True,Instr2,Num2),compile(False,Instr3,Num3),
+					      TrueSkip is Num2+2,append(Instr1,[["BRZ",TrueSkip]],NewInstr),ElseSkip is Num3+1,
+					      append(NewInstr,Instr2,Temp),append(Temp,[["JUMP",ElseSkip]],NewInstr2),append(NewInstr2,Instr3,Instr),
+					      Num is Num1+1+Num2+1+Num3.
+compile([whiletoken,Cond,Prog],Instr,Num):-compile(Cond,Instr1,Num1),compile(Prog,Instr2,Num2),Skip is Num2+2,append(Instr1,[["BRZ",Skip]],TmpIns),
+					   Loop is -1*(Num1+Num2+1),append(TmpIns,Instr2,TmpIns2),append(TmpIns2,[["JUMP",Loop]],Instr),
+					   Num is Num1+1+Num2+1.
+compile([asstoken,[idtoken,Val],Expr],Instr,Num):-compile(Expr,Instr1,Num1),string_codes(Str,Val),append(Instr1,[["STORE",Str]],Instr),Num is Num1+1.
+
+%prints one instruction
+printInstr([H]):-write(H),nl.
+printInstr([H,T]):-write(H),write(" "),write(T),nl.
+
+%prints out all instructions
+printInstructions([]).
+printInstructions([H|T]):-printInstr(H),printInstructions(T).

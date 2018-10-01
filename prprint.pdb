@@ -1,0 +1,26 @@
+%Author Adrian Postolache
+%Deals with pretty printing a syntax tree
+
+%These write things with certain amoints of tabs
+printthing(Val,0):-write(Val).
+printthing(Val,NumTabs):-write('	'),NewTabs is NumTabs - 1,printthing(Val,NewTabs).
+
+%All these just print the things with relative amounts of tabs
+printtree([prog,Body],Tabs):-printtree(Body,Tabs).
+printtree([stmt,Stmt],Tabs):-printtree(Stmt,Tabs),nl.
+printtree([stmtseq,Stmt],Tabs):-printtree(Stmt,Tabs).
+printtree([stmtseq,Stmt,StmtSeq],Tabs):-printtree(Stmt,Tabs),printtree(StmtSeq,Tabs).
+printtree([pass],Tabs):-printthing("pass",Tabs).
+printtree([expr,Expr],Tabs):-printtree(Expr,Tabs).
+printtree([optoken,[optoken,[Op]],Expr1,Expr2],Tabs):-printthing(Op,Tabs),
+					  write(' '),printtree(Expr1,0),write(' '),
+					  printtree(Expr2,0).
+printtree([littoken,Num],Tabs):-string_codes(Str,Num),printthing(Str,Tabs).
+printtree([idtoken,ID],Tabs):-string_codes(Str,ID),printthing(Str,Tabs).
+printtree([iftoken,Cond,True,Else],Tabs):-printthing("if ",Tabs),printtree(Cond,0),nl,
+					  NewTabs is Tabs+1, printtree(True,NewTabs),
+					  printtree(Else,NewTabs).
+printtree([whiletoken,Cond,Prog],Tabs):-printthing("while ",Tabs),printtree(Cond,0),nl,
+					NewTabs is Tabs+1,printtree(Prog,NewTabs).
+printtree([asstoken,ID,Expr],Tabs):-printtree(ID,Tabs),write(" := "),printtree(Expr,0).
+printtree(Tree):-printtree(Tree,0).

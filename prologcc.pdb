@@ -1,0 +1,60 @@
+%Author Adrian Postolache
+
+%regex for alphabetical strings
+idregex(kleene1(union(a,union(b,union(c,union(d,union(e,union(f,union(g,union(h,union(i,union(j,union(k,union(l,union(m,union(n,union(o,union(p,union(q,union(r,union(s,union(t,union(u,union(v,union(w,union(x,union(y,z))))))))))))))))))))))))))).
+
+%regex for positive and negative integers
+numregex(seq(union('-',empty),kleene1(union('1',union('2',union('3',union('4',union('5',union('6',union('7',union('8',union('9','0')))))))))))).
+
+%regex for an operation
+opregex(union('+',union('-',union('*','/')))).
+
+%regex for a comment block
+commentregex(seq('|=',seq(kleene(any),'=|'))).
+
+%regex for any amount of space
+spaceregex(kleene1(union(' ',union('	',union('\t','\s'))))).
+
+%'regex' for a newline
+newlineregex('\n').
+
+%regex for the assignment operator
+assregex(seq(':','=')).
+
+%end of input
+read_input([],[]).
+
+%Non-generating consumption
+read_input(Inp,L):- deal_with_nl(Inp,Left),!,read_input(Left,L);
+			deal_with_fucking_comments(Inp,Left),!,read_input(Left,L);
+			deal_with_space(Inp,Left),!,read_input(Left,L).
+
+%Token-generating consumption
+read_input(Inp,[H|T]):-	deal_with_num(Inp,Left,H),!,read_input(Left,T);
+			deal_with_token(Inp,Left,H),!,read_input(Left,T);
+			deal_with_op(Inp,Left,H),!,read_input(Left,T);
+			deal_with_ass(Inp,Left,H),!,read_input(Left,T). 
+
+%All these consume their equivalent regex from the input and returns the appropriate token
+deal_with_nl(Inp,Left):-newlineregex(X),re_contains(X,Inp,Left,_,[]),!.
+deal_with_fucking_comments(Inp,Left):-commentregex(X),re_contains(X,Inp,Left,_,[]),!.
+deal_with_space(Inp,Left):- spaceregex(X),re_contains(X,Inp,Left,_,[]),!.
+deal_with_num(Inp,Left,[littoken,Cons]):- numregex(X),re_contains(X,Inp,Left,Cons,[]),!.
+
+deal_with_op(Inp,Left,[optoken,Cons]):- opregex(X),re_contains(X,Inp,Left,Cons,[]),!.
+
+deal_with_ass(Inp,Left,[asstoken]):-assregex(X),re_contains(X,Inp,Left,_,[]),!.
+
+deal_with_token(Inp,Left,Token):- idregex(X),re_contains(X,Inp,Left,Cons,[]),determine_token(Cons,Token),!.
+
+
+%these determine the kind of token an id token is
+determine_token(Inp,[pass]):- Inp == [p,a,s,s],!.
+determine_token(Inp,[begin]):-Inp == [b,e,g,i,n],!.
+determine_token(Inp,[iftoken]):-Inp == [i,f],!.
+determine_token(Inp,[whiletoken]):-Inp == [w,h,i,l,e],!.
+determine_token(Inp,[end]):-Inp == [e,n,d],!.
+determine_token(Inp,[idtoken,Inp]).
+
+%basically the main method, assumes all the appropriate files are consulted.
+test(Inp):-read_input(Inp,Out),parse(prog,Out,_,Result),printtree(Result),compile(Result,Instr,_),printInstructions(Instr).

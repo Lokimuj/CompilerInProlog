@@ -1,0 +1,38 @@
+%Adrian Postolache axp3806@rit.edu
+%parser.pdb
+
+
+
+
+%parses a prog thing from the list of tokens
+parse(prog, Inp, Left,[prog,Rest]):- parse(stmt,Inp,Left,Rest);parse(begin,Inp,Temp1,_),
+				     parse(stmtseq,Temp1,Temp2,Rest),parse(end,Temp2,Left,_).
+%Deals with single statement stmtseqs
+parse(stmtseq,Inp,Left,[stmtseq,Rest]):- parse(stmt,Inp,Left,Rest).
+%Deals with multistatement stmtseqs
+parse(stmtseq,Inp,Left,[stmtseq,Rest1,Rest2]):- parse(stmt,Inp,Temp,Rest1),parse(stmtseq,Temp,Left,Rest2).
+
+%Deals with one statement
+parse(stmt,Inp,Left,[stmt,Rest]):- parse(assgn,Inp,Left,Rest),!;parse(if,Inp,Left,Rest),!;parse(while,Inp,Left,Rest),!;
+				   parse(pass,Inp,Left,Rest),!.
+
+%deals with an assignment statement
+parse(assgn,Inp,Left,[asstoken,ID,Expr]):- parse(idtoken,Inp,Temp1,ID),parse(asstoken,Temp1,Temp2,_),parse(expr,Temp2,Left,Expr).
+
+%deals with an if statement
+parse(if,Inp,Left,[iftoken,Cond,True,Else]):- parse(iftoken,Inp,Temp1,_),parse(expr,Temp1,Temp2,Cond),parse(prog,Temp2,Temp3,True),
+					parse(prog,Temp3,Left,Else).
+
+%deals with a while statement
+parse(while,Inp,Left,[whiletoken,Cond,Prog]):-parse(whiletoken,Inp,Temp1,_),parse(expr,Temp1,Temp2,Cond),parse(prog,Temp2,Left,Prog).
+
+%deals with a binary operation
+parse(oper,Inp,Left,[optoken,Op,Expr1,Expr2]):-parse(optoken,Inp,Temp1,Op),parse(expr,Temp1,Temp2,Expr1),parse(expr,Temp2,Left,Expr2).
+
+%deals with an expression
+parse(expr,Inp,Left,[expr,Rest]):- parse(oper,Inp,Left,Rest),!;
+				   parse(idtoken,Inp,Left,Rest),!;
+				   parse(littoken,Inp,Left,Rest),!.
+%Deals with singleton tokens
+parse(Token,[[Token|R]|T2],T2,[Token|R]).
+
